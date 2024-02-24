@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ArkanoidFacil</title>
+        <style>
+            body {
+                background-color: darkgoldenrod;
+                display: grid;
+                place-content: center;
+            }
+            canvas {
+                margin: 0 auto;
+                border: 1px solid #111;
+                background: url('./bg-arkanoid.png') repeat;
+                display: block;
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas></canvas>
+
+        <img hidden id="spriteSheet" src="./spriteSheet-arkanoid.png" alt="Sprite Arkanoid" />
+        <img id="ladrillos" src="./ladrillos.png" alt="Sprite Bricks Arkanoid" />
+
+        <script>
+            const canvas = document.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const $sprite = document.querySelector('#spriteSheet');
+            const $bricks = document.querySelector('#ladrillos');
+
+            canvas.width = 400;
+            canvas.height = 448;
+            canvas.style.scale = 1;
+
+            //Datos bool direccion Eventos:
+            let DchaPulsada = false;
+            let IzdaPulsada = false;
+
+            //Datos de la pelota:
+            let pelotaX = canvas.width / 2;
+            let pelotaY = canvas.height - 80;
+            let pelotaIncX = 3;
+            let pelotaIncY = -3;
+            const pelotaRadio = 4;
+
+            //Datos de la Pala:
+            let palaX = canvas.width / 2;
+            const palaY = canvas.height - 40;
+            let anchoPala = 60;
+            const altoPala = 15;
+            let palaIncX = 8;
+
+            //Datos de la matriz de ladrillos
+            let ladrillo = [];
+            const anchoLadrillo = 30;
+            const altoLadrillo = 15;
+            const offSetX = 60;
+            const offSetY = 50;
+            const nro_filas = 6;
+            const nro_columnas = 10;
+
+            for (let y = 0; y < nro_filas; y ++) {
+
+                ladrillo[y] = [];
+
+                for (let x = 0; x < nro_columnas; x ++) {
+
+                    ladrillo[y][x] = {
+                        x: x * anchoLadrillo + offSetX,
+                        y: y * altoLadrillo + offSetY,
+                        existe: true
+                    }
+                }
+            }
+
+            function dibujaPelota() {
+                ctx.beginPath();
+                ctx.fillStyle = 'white';
+                ctx.arc(pelotaX, pelotaY, pelotaRadio, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            function moverPelota() {
+
+                checkLimites();
+
+                pelotaX += pelotaIncX;
+                pelotaY += pelotaIncY;
+            }
+
+            function checkLimites() {
+
+                if (pelotaX + pelotaIncX > canvas.width - pelotaRadio ||
+                    pelotaX + pelotaIncX < pelotaRadio) {
+                        pelotaIncX = -pelotaIncX;
+                }
+
+                if (pelotaY + pelotaIncY < pelotaRadio ||
+                    pelotaY + pelotaIncY > canvas.height - pelotaRadio) {
+                    pelotaIncY = -pelotaIncY;
+                }
+            }
+
+            function dibujaPala() {
+
+                ctx.beginPath();
+                ctx.fillStyle = 'grey';
+                ctx.fillRect(
+                    palaX, palaY, anchoPala, altoPala
+                );
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            function moverPala() {
+
+                if (DchaPulsada) {
+                    palaX += palaIncX;
+
+                } else if (IzdaPulsada) {
+                    palaX -= palaIncX;
+                }
+            }
+
+            function dibujaLadrillos() {
+
+                for (let i = 0; i < nro_filas; i ++) {
+                    for (let ii = 0; ii < nro_columnas; ii ++) {
+
+                        const x = ladrillo[i][ii].x;
+                        const y = ladrillo[i][ii].y;
+                        const ladri = ladrillo[i][ii];
+
+                        if (ladri.existe) {
+
+                            if (colisiones(
+                                pelotaX,
+                                pelotaY,
+                                pelotaRadio * 2,
+                                pelotaRadio * 2,
+                                x,
+                                y,
+                                anchoLadrillo,
+                                altoLadrillo
+                            )) {
+
+                                console.log('mainColision');
+                                // pelotaIncY = -pelotaIncY;
+
+                                const inSetAncho = anchoLadrillo / 5;
+
+                                if (pelotaX < x + anchoLadrillo - inSetAncho &&
+                                    pelotaX + inSetAncho > x
+                                    ) {
+                                        pelotaIncY = -pelotaIncY;
+                                        ladri.existe = false;
+
+                                } else {
+                                    pelotaIncX = -pelotaIncX;
+                                    ladri.existe = false;
+                                }
+                        }
+
+                        ctx.beginPath();
+                        ctx.fillStyle = 'lightblue';
+                        ctx.fillRect(x, y, anchoLadrillo - 1, altoLadrillo - 1);
+                        ctx.fill();
+                        ctx.closePath();
+                        }
+                    }
+                }
+            }
+
+            function colisiones(
+                x1, y1, x1ancho, y1alto,
+                x2, y2, x2ancho, y2alto
+                ) {
+                
+                return x1 < x2 + x2ancho &&
+                    x1 + x1ancho > x2 &&
+                    y1 < y2 + y2alto &&
+                    y1 + y1alto > y2;
+            }
+            
+            function eventosControles() {
+
+                document.addEventListener('keydown', ({key}) => {
+
+                    if (key === 'Right' || key === 'ArrowRight') {
+                        DchaPulsada = true
+
+                    } else if (key === 'Left' || key === 'ArrowLeft') {
+                        IzdaPulsada = true
+                    }
+                });
+
+                document.addEventListener('keyup', ({key}) => {
+
+                    if (key === 'Right' || key === 'ArrowRight') {
+                        DchaPulsada = false
+                    } else if (key === 'Left' || key === 'ArrowLeft') {
+                        IzdaPulsada = false
+                    }
+                });
+            }
+
+            function buclePrincipal() {
+
+                window.requestAnimationFrame(buclePrincipal);
+                
+                // console.log('run');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                dibujaLadrillos();
+                dibujaPelota();
+                dibujaPala();
+                
+                moverPelota();
+                moverPala();
+            }
+
+            eventosControles();
+            buclePrincipal();
+
+        </script>
+    </body>
+</html>
